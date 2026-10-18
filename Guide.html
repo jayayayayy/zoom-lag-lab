@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zoom Lag Lab guide</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;max-width:850px;margin:50px auto;padding:0 24px;color:#202b35;background:#fafbfc}h1{line-height:1.2}h2{margin-top:40px}a{color:#006bc7}code{font-size:13px;background:#e9edf2;border-radius:4px;padding:2px 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#e9edf2;border-radius:10px;padding:18px}pre code{padding:0}table{border-collapse:collapse;font-size:14px;width:100%}td{padding:10px;border-bottom:1px solid #cdd5df}tr:first-child{font-weight:600}</style><h1>Zoom Lag Lab beta — user guide</h1>
+<p>Zoom Lag Lab creates real packet dropouts on your Mac’s selected Wi-Fi or Ethernet interface. All apps using that connection are affected, including Zoom audio and video. It does not configure the router or other devices, and it does not provide a precise latency or bandwidth cap.</p>
+<h2>Start and stop</h2>
+<p>1. Open Zoom Lag Lab.app and choose your active connection.</p>
+<p>2. Choose Choppy or Severe. Leave Keep running until I press Restore checked for continuous operation.</p>
+<p>3. Click Start lag and approve the standard macOS administrator prompt.</p>
+<p>4. Click Restore connection when finished. Wait for Connection restored.</p>
+<table>
+<tr><td>Preset</td><td>Drop packets</td><td>Allow recovery</td><td>Default run length</td></tr>
+<tr><td>Choppy</td><td>1 second</td><td>2 seconds</td><td>Until Restore</td></tr>
+<tr><td>Severe</td><td>3 seconds</td><td>1 second</td><td>Until Restore</td></tr>
+<tr><td>Complete interruption</td><td>Continuously</td><td>None</td><td>Until Restore</td></tr>
+</table>
+<p>Uncheck Keep running to use the optional timed mode: 30 seconds for Choppy/Severe or 5 seconds for Complete interruption. Timing is approximate. Heavy loss can disconnect a meeting instead of merely making it choppy.</p>
+<h2>Requirements</h2>
+<p>Use macOS Tahoe 26 or later and an administrator account. Disconnect VPNs, turn off Internet Sharing, and use one active internet connection. The helper refuses to start when PF is already enabled, existing connection states could bypass the effect, forwarding is enabled, or its required Apple anchor is missing.</p>
+<p>Internet Sharing must remain off throughout the session so this Mac is not carrying other devices’ traffic. Multiple active interfaces may let an app bypass the selected connection.</p>
+<h2>Recovery</h2>
+<p>Continuous mode has no automatic time limit. Use Restore connection to stop it. The worker also watches the controlling app’s process and removes its rules if that process exits. If the worker itself is force-killed or cleanup fails, reopen the app and click Restore connection. Restart the Mac if recovery repeatedly fails; the app installs no startup service. Toggling Wi-Fi alone does not remove PF rules.</p>
+<p>Connection restored confirms removal of this app’s controls; it does not diagnose unrelated internet problems. Sleep or a system failure can delay cleanup.</p>
+<h2>How it works</h2>
+<p>The Swift/AppKit interface reads its helper before requesting administrator access. The helper installs temporary packet-drop rules in its own PF child anchor, com.apple/000.zoom-lag-lab, and holds its own PF enable reference. Restore empties that child anchor and releases the reference.</p>
+<p>It does not edit /etc/pf.conf, reload the global ruleset, flush other firewall states, or configure other devices. The app stores no password and does not request camera or microphone access.</p>
+<h2>Optional Terminal commands</h2>
+<p>Open Terminal in the source repository folder containing lag.sh:</p>
+<pre><code>
+# Show the intended behavior without changing networking.
+/bin/bash ./lag.sh preview severe en0 continuous
+
+# Start continuous severe dropouts on en0.
+sudo /bin/bash -c &quot;$(/bin/cat ./lag.sh)&quot; zoom-lag-lab start severe en0 continuous
+
+# Restore from another Terminal window in the same folder.
+sudo /bin/bash -c &quot;$(/bin/cat ./lag.sh)&quot; zoom-lag-lab stop
+</code></pre>
+<p>Press Control-C to stop a foreground Terminal run. Replace en0 with the intended physical interface if necessary; networksetup -listallhardwareports lists names. Reading the helper before elevation avoids asking a privileged shell to open a privacy-protected Documents path.</p>
+<h2>Check your own Zoom session</h2>
+<p>Use a private meeting with a second device as receiver. Check received video/audio and Zoom’s media statistics before, during, and after the effect. The local camera preview can keep moving when outgoing traffic is being dropped. Zoom’s adaptation and loss concealment mean exact received stutter and sound vary.</p>
+<h2>Distribution</h2>
+<p>The download contains Apple Silicon and Intel binaries. It is ad-hoc signed, not notarized. macOS may require review in System Settings, Privacy &amp; Security before opening a downloaded copy. The source includes build and mocked regression-check scripts.</p></html>

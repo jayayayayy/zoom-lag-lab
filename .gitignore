@@ -1,0 +1,6 @@
+.DS_Store
+._*
+dist/
+work/
+.build/
+*.log
